@@ -1,0 +1,87 @@
+syntax = "proto3";
+
+package events;
+
+option go_package = "github.com/sagittarius/auction/proto/events";
+
+import "google/protobuf/timestamp.proto";
+
+// Auction events
+message AuctionStarted {
+  string auction_id = 1;
+  string item_id = 2;
+  string seller_id = 3;
+  int64 starting_price = 4;
+  int64 duration_seconds = 5;
+  string auction_type = 6; // "first_price" or "second_price"
+  google.protobuf.Timestamp started_at = 7;
+}
+
+message NewLeader {
+  string auction_id = 1;
+  string bid_id = 2;
+  string user_id = 3;
+  int64 amount = 4;
+  google.protobuf.Timestamp timestamp = 5;
+}
+
+message AuctionFinished {
+  string auction_id = 1;
+  string winner_id = 2;
+  string winning_bid_id = 3;
+  int64 final_price = 4;
+  google.protobuf.Timestamp finished_at = 5;
+}
+
+// Bid events
+message BidSubmitted {
+  string bid_id = 1;
+  string auction_id = 2;
+  string user_id = 3;
+  int64 amount = 4;
+  google.protobuf.Timestamp submitted_at = 5;
+  string idempotency_key = 6;
+}
+
+message BidAccepted {
+  string bid_id = 1;
+  string auction_id = 2;
+  string user_id = 3;
+  int64 amount = 4;
+  google.protobuf.Timestamp accepted_at = 5;
+}
+
+message BidRejected {
+  string bid_id = 1;
+  string auction_id = 2;
+  string user_id = 3;
+  string reason = 4;
+  google.protobuf.Timestamp rejected_at = 5;
+}
+
+// Budget events
+message FundsReserved {
+  string reservation_id = 1;
+  string user_id = 2;
+  string auction_id = 3;
+  string bid_id = 4;
+  int64 amount = 5;
+  google.protobuf.Timestamp reserved_at = 6;
+}
+
+message FundsCharged {
+  string reservation_id = 1;
+  string user_id = 2;
+  string auction_id = 3;
+  int64 amount = 4;
+  google.protobuf.Timestamp charged_at = 5;
+}
+
+message FundsReleased {
+  string reservation_id = 1;
+  string user_id = 2;
+  string auction_id = 3;
+  int64 amount = 4;
+  google.protobuf.Timestamp released_at = 5;
+}
+

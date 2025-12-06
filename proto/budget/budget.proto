@@ -1,0 +1,59 @@
+syntax = "proto3";
+
+package budget;
+
+option go_package = "github.com/sagittarius/auction/proto/budget";
+
+service BudgetService {
+  rpc ReserveFunds(ReserveFundsRequest) returns (ReserveFundsResponse);
+  rpc ChargeFunds(ChargeFundsRequest) returns (ChargeFundsResponse);
+  rpc ReleaseFunds(ReleaseFundsRequest) returns (ReleaseFundsResponse);
+  rpc GetBalance(GetBalanceRequest) returns (GetBalanceResponse);
+}
+
+message ReserveFundsRequest {
+  string user_id = 1;
+  int64 amount = 2;
+  string auction_id = 3;
+  string bid_id = 4;
+}
+
+message ReserveFundsResponse {
+  bool success = 1;
+  string reservation_id = 2;
+  int64 remaining_balance = 3;
+  string error_message = 4;
+}
+
+message ChargeFundsRequest {
+  string reservation_id = 1;
+  string user_id = 2;
+  string auction_id = 3;
+}
+
+message ChargeFundsResponse {
+  bool success = 1;
+  int64 charged_amount = 2;
+  string error_message = 3;
+}
+
+message ReleaseFundsRequest {
+  string reservation_id = 1;
+  string user_id = 2;
+}
+
+message ReleaseFundsResponse {
+  bool success = 1;
+  string error_message = 2;
+}
+
+message GetBalanceRequest {
+  string user_id = 1;
+}
+
+message GetBalanceResponse {
+  int64 balance = 1;
+  bool success = 2;
+  string error_message = 3;
+}
+

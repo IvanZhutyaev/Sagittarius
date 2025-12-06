@@ -1,0 +1,29 @@
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+
+scrape_configs:
+  - job_name: 'prometheus'
+    static_configs:
+      - targets: ['localhost:9090']
+
+  - job_name: 'bidder-service'
+    static_configs:
+      - targets: ['bidder-service:8081']
+
+  - job_name: 'budget-service'
+    static_configs:
+      - targets: ['budget-service:50051']
+
+  - job_name: 'auction-engine'
+    static_configs:
+      - targets: ['auction-engine:8082']
+
+  - job_name: 'notification-service'
+    static_configs:
+      - targets: ['notification-service:8083']
+
+  - job_name: 'analytics-aggregator'
+    static_configs:
+      - targets: ['analytics-aggregator:8000']
+
