@@ -1,0 +1,68 @@
+{
+  "dashboard": {
+    "title": "Sagittarius Auction System",
+    "panels": [
+      {
+        "title": "Request Rate",
+        "targets": [
+          {
+            "expr": "rate(http_requests_total[5m])",
+            "legendFormat": "{{method}} {{endpoint}}"
+          }
+        ],
+        "type": "graph"
+      },
+      {
+        "title": "Request Latency (P95)",
+        "targets": [
+          {
+            "expr": "histogram_quantile(0.95, rate(http_request_duration_seconds_bucket[5m]))",
+            "legendFormat": "{{endpoint}}"
+          }
+        ],
+        "type": "graph"
+      },
+      {
+        "title": "Active Auctions",
+        "targets": [
+          {
+            "expr": "active_auctions_total",
+            "legendFormat": "Active Auctions"
+          }
+        ],
+        "type": "stat"
+      },
+      {
+        "title": "Bids Submitted",
+        "targets": [
+          {
+            "expr": "rate(bids_submitted_total[5m])",
+            "legendFormat": "{{status}}"
+          }
+        ],
+        "type": "graph"
+      },
+      {
+        "title": "Budget Operations",
+        "targets": [
+          {
+            "expr": "rate(budget_operations_total[5m])",
+            "legendFormat": "{{operation}} {{status}}"
+          }
+        ],
+        "type": "graph"
+      },
+      {
+        "title": "Error Rate",
+        "targets": [
+          {
+            "expr": "rate(http_requests_total{status=~\"5..\"}[5m])",
+            "legendFormat": "{{endpoint}}"
+          }
+        ],
+        "type": "graph"
+      }
+    ]
+  }
+}
+

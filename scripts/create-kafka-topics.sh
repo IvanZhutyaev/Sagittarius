@@ -30,5 +30,13 @@ docker exec -it sagittarius-kafka-1 kafka-topics --create \
   --replication-factor 1 \
   --if-not-exists
 
+# Dead Letter Queue
+docker exec -it sagittarius-kafka-1 kafka-topics --create \
+  --bootstrap-server $KAFKA_BROKER \
+  --topic dead-letter-queue \
+  --partitions 3 \
+  --replication-factor 1 \
+  --if-not-exists
+
 echo "Kafka topics created successfully!"
 

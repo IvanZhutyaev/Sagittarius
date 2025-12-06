@@ -23,8 +23,11 @@ func main() {
 	// Middleware
 	router.Use(gin.Recovery())
 	router.Use(gin.Logger())
+	
+	// CORS
+	router.Use(middleware.CORSMiddleware())
 
-	// Rate limiting
+	// Rate limiting (100 requests per second per IP/user)
 	limiter := middleware.NewRateLimiter(100, time.Second)
 	router.Use(middleware.RateLimitMiddleware(limiter))
 

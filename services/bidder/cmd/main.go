@@ -42,9 +42,12 @@ func main() {
 		}
 	}()
 
-	// Initialize Redis for idempotency
+	// Initialize Redis for idempotency with connection pooling
 	redisClient := redis.NewClient(&redis.Options{
-		Addr: redisURL,
+		Addr:         redisURL,
+		PoolSize:     10,
+		MinIdleConns: 5,
+		MaxRetries:   3,
 	})
 	defer redisClient.Close()
 
@@ -80,6 +83,9 @@ func main() {
 	// Middleware
 	router.Use(gin.Recovery())
 
+	// Health handler
+	healthHandler := handler.NewHealthHandler(redisClient, conn)
+
 	// Routes
 	api := router.Group("/api/v1")
 	{
@@ -87,13 +93,20 @@ func main() {
 		api.GET("/health", h.HealthCheck)
 	}
 
+	// Kubernetes probes
+	router.GET("/health/live", healthHandler.Liveness)
+	router.GET("/health/ready", healthHandler.Readiness)
+
 	// Metrics endpoint
 	router.GET("/metrics", gin.WrapH(promhttp.Handler()))
 
-	// Start server
+	// Start server with timeouts
 	srv := &http.Server{
-		Addr:    ":" + httpPort,
-		Handler: router,
+		Addr:         ":" + httpPort,
+		Handler:      router,
+		ReadTimeout:  15 * time.Second,
+		WriteTimeout: 15 * time.Second,
+		IdleTimeout:  60 * time.Second,
 	}
 
 	go func() {

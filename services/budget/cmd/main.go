@@ -43,8 +43,17 @@ func main() {
 		}
 	}()
 
-	// Initialize database
-	db, err := pgxpool.New(context.Background(), dbURL)
+	// Initialize database with connection pooling
+	config, err := pgxpool.ParseConfig(dbURL)
+	if err != nil {
+		log.Fatalf("Failed to parse database URL: %v", err)
+	}
+	config.MaxConns = 25
+	config.MinConns = 5
+	config.MaxConnLifetime = 30 * time.Minute
+	config.MaxConnIdleTime = 5 * time.Minute
+
+	db, err := pgxpool.NewWithConfig(context.Background(), config)
 	if err != nil {
 		log.Fatalf("Failed to connect to database: %v", err)
 	}
@@ -74,10 +83,22 @@ func main() {
 	s := grpc.NewServer()
 	budget.RegisterBudgetServiceServer(s, handler.NewHandler(svc))
 
-	// Health check
+	// Health check with readiness
 	healthServer := health.NewServer()
 	grpc_health_v1.RegisterHealthServer(s, healthServer)
-	healthServer.SetServingStatus("budget.BudgetService", grpc_health_v1.HealthCheckResponse_SERVING)
+	
+	// Start as not serving, will be set to serving after readiness check
+	healthServer.SetServingStatus("budget.BudgetService", grpc_health_v1.HealthCheckResponse_NOT_SERVING)
+	
+	// Readiness check
+	go func() {
+		time.Sleep(1 * time.Second) // Give time for initialization
+		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		defer cancel()
+		if err := db.Ping(ctx); err == nil {
+			healthServer.SetServingStatus("budget.BudgetService", grpc_health_v1.HealthCheckResponse_SERVING)
+		}
+	}()
 
 	// Reflection for development
 	reflection.Register(s)
@@ -96,7 +117,31 @@ func main() {
 	<-quit
 
 	log.Println("Shutting down Budget Service...")
-	s.GracefulStop()
+	
+	// Set health to not serving
+	healthServer.SetServingStatus("budget.BudgetService", grpc_health_v1.HealthCheckResponse_NOT_SERVING)
+	
+	// Graceful shutdown with timeout
+	shutdownCtx, shutdownCancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer shutdownCancel()
+	
+	done := make(chan struct{})
+	go func() {
+		s.GracefulStop()
+		close(done)
+	}()
+	
+	select {
+	case <-done:
+		log.Println("Budget Service stopped gracefully")
+	case <-shutdownCtx.Done():
+		log.Println("Shutdown timeout, forcing stop")
+		s.Stop()
+	}
+	
+	// Close connections
+	producer.Close()
+	db.Close()
 	log.Println("Budget Service stopped")
 }
 

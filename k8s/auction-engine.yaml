@@ -1,0 +1,44 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: auction-engine
+  labels:
+    app: auction-engine
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: auction-engine
+  template:
+    metadata:
+      labels:
+        app: auction-engine
+    spec:
+      containers:
+      - name: auction-engine
+        image: your-registry/sagittarius-auction-engine:latest
+        env:
+        - name: KAFKA_BROKERS
+          value: "kafka:9092"
+        - name: JAEGER_URL
+          value: "http://jaeger:14268/api/traces"
+        resources:
+          requests:
+            memory: "128Mi"
+            cpu: "100m"
+          limits:
+            memory: "512Mi"
+            cpu: "500m"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: auction-engine
+spec:
+  selector:
+    app: auction-engine
+  ports:
+  - port: 8082
+    targetPort: 8082
+  type: ClusterIP
+

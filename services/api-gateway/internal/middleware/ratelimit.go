@@ -1,6 +1,7 @@
 package middleware
 
 import (
+	"fmt"
 	"sync"
 	"time"
 
@@ -62,13 +63,21 @@ func (rl *RateLimiter) Allow(key string) bool {
 
 func RateLimitMiddleware(limiter *RateLimiter) gin.HandlerFunc {
 	return func(c *gin.Context) {
+		// Use IP address for rate limiting
 		key := c.ClientIP()
+		
+		// Optionally use user ID if authenticated
 		if userID, exists := c.Get("user_id"); exists {
-			key = userID.(string)
+			key = fmt.Sprintf("user:%s", userID.(string))
+		} else {
+			key = fmt.Sprintf("ip:%s", c.ClientIP())
 		}
 
 		if !limiter.Allow(key) {
-			c.JSON(429, gin.H{"error": "rate limit exceeded"})
+			c.JSON(429, gin.H{
+				"error": "rate limit exceeded",
+				"retry_after": 60,
+			})
 			c.Abort()
 			return
 		}
